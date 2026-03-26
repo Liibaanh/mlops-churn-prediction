@@ -1,0 +1,23 @@
+
+# fastapi
+fastapi
+uvicorn
+
+# ML 
+scikit-learn
+pandas
+numpy
+lightgbm
+xgboost
+
+# EDA (notebook)
+jupyter
+matplotlib 
+seaborn
+
+# AWS
+boto3
+
+# Utils
+python-dotenv
+joblib
