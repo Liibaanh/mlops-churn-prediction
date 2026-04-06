@@ -1,87 +1,108 @@
+import os
+import pandas as pd
+import mlflow
+import mlflow.xgboost
 from fastapi import FastAPI
 from pydantic import BaseModel
-# import Gradio as gr
-# from .... # ML model
+from dotenv import load_dotenv
+
+load_dotenv()
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db"))
 
 # Initialize FastAPI application
 app = FastAPI(
-    title="Telco Custiomer Churn API",
+    title="Telco Customer Churn API",
     description="ML API for predicting customer churn in telecom industry",
     version="1.0"
 )
 
+# Load model at startup
+# model = mlflow.xgboost.load_model("models:/churn-model/latest")
+
+model_path = "/app/mlruns/0/models"
+versions = sorted(os.listdir(model_path))
+latest = os.path.join(model_path, versions[-1], "artifacts")
+model = mlflow.xgboost.load_model(latest)
+
+
+# mlflow.set_tracking_uri("sqlite:///mlflow.db")
+# Hvis du har registrert modellen i model registry:
+# model = mlflow.xgboost.load_model("models:/churn-model/latest")
+
+
 # CRITICAL: Required for AWS Application Load Balancer health checks
 @app.get("/")
 def root():
-    """
-    check endpoint for monitoring and load balancer health checks.
-    """
-    return {"status":"ok"}
+    """Health check endpoint for monitoring and load balancer health checks."""
+    return {"status": "ok"}
 
 
-# Pydantic model for automatic and API documentation
-# Validate, document and serv
+# Pydantic model — raw data from user
 class CustomerData(BaseModel):
-    
-    """
-    Customer data schema for churn prediction.
-    
-    This schema defines the exact 18 features required for churn prediction.
-    All features match the original dataset structure for consistency.
-    
-    """
-    # Demographics 
-    gender : str                # "Male" or "Female"
-    Partner : str               # "Yes" or "No"
-    Dependents : str            # "Yes" or "No"
-    
-    # Phone services 
-    PhoneService : str          # "Yes" or "No" 
-    MultipleLines : str         # "Yes", "No" "No Phone service"
-    
-    # Internet services
-    InternetServices : str      # "DSL", "Fiber optic", or "No"
-    OnlineSecurity : str        # "Yes", "No" or "No internet service"
-    OnlineBackup : str          # "Yes", "No" or "No internet service"
-    DeviceProtection : str      # "Yes", "No" or "No internet service"
-    TechSupport : str           # "Yes", "No" or "No internet service"
-    StreamingTV : str           # "Yes", "No" or "No internet service"
-    StreamingMovies : str       # "Yes", "No" or "No internet service"
-    
-    # Account information
-    Contract : str              # "Month-to-Month", "One year", "Two year"
-    PaperlessBilling : str      # "Yes" or "No"
-    PaymentMethod : str         # "Electronic check", "Mailed check", etc
-    
-    # Numeric features
-    tenure : int                # Number of months with company
-    MonthlyCharges : float      # Monthly charges in dollars
-    TotalCharges : float        # Total charges to date
-    
-    
-@app.post("/predict")
+    gender: str              # "Male" or "Female"
+    SeniorCitizen: int       # 0 or 1
+    Partner: str             # "Yes" or "No"
+    Dependents: str          # "Yes" or "No"
+    tenure: int              # months with company
+    PhoneService: str        # "Yes" or "No"
+    MultipleLines: str       # "Yes", "No", "No phone service"
+    InternetService: str     # "DSL", "Fiber optic", "No"
+    OnlineSecurity: str      # "Yes", "No", "No internet service"
+    OnlineBackup: str        # "Yes", "No", "No internet service"
+    DeviceProtection: str    # "Yes", "No", "No internet service"
+    TechSupport: str         # "Yes", "No", "No internet service"
+    StreamingTV: str         # "Yes", "No", "No internet service"
+    StreamingMovies: str     # "Yes", "No", "No internet service"
+    Contract: str            # "Month-to-month", "One year", "Two year"
+    PaperlessBilling: str    # "Yes" or "No"
+    PaymentMethod: str       # "Electronic check", "Mailed check", etc.
+    MonthlyCharges: float
+    TotalCharges: float
 
+
+def transform(data: CustomerData) -> pd.DataFrame:
+    """
+    Transform raw customer data to match training features.
+    Same logic as build_features.py.
+    """
+    df = pd.DataFrame([data.dict()])
+
+    # Binary Yes/No → 0/1
+    BINARY_COLS = [
+        "Partner", "Dependents", "PhoneService", "PaperlessBilling",
+        "OnlineSecurity", "OnlineBackup", "DeviceProtection",
+        "TechSupport", "StreamingTV", "StreamingMovies"
+    ]
+    for col in BINARY_COLS:
+        df[col] = df[col].map(lambda x: 1 if x == "Yes" else 0)
+
+    # One-hot encode categorical columns
+    CATEGORICAL_COLS = ["gender", "MultipleLines", "InternetService",
+                        "Contract", "PaymentMethod"]
+    df = pd.get_dummies(df, columns=CATEGORICAL_COLS, drop_first=True)
+
+    # Add missing columns with 0 (in case user sends a category not seen before)
+    expected_cols = model.feature_names_in_
+    for col in expected_cols:
+        if col not in df.columns:
+            df[col] = 0
+
+    # Reorder columns to match training data exactly
+    df = df[expected_cols]
+
+    return df
+
+
+@app.post("/predict")
 def get_prediction(data: CustomerData):
     """
-    Main prediction endpoint for customer churn prediction
-    
-    This endpoint:
-    1. Receive validated customer data via pydantic model
-    2. Calls the ... pipeline to transform features and predict
-    3. Returns churn prediction in JSON format
-    
-    Expected Response
-    - {"Prediction": "Likely to churn"} or {"prediction": "Not likely to churn"}
-    - {"error":"error_message"} if prediction fails
-
+    Main prediction endpoint for customer churn prediction.
+    Accepts raw customer data, transforms it, and returns churn prediction.
     """
-    
     try:
-        # Convert Pydantic model to dict and call ... pipeline
-        result = predict(data.dict())
+        df = transform(data)
+        prediction = model.predict(df)
+        result = "Likely to churn" if prediction[0] == 1 else "Not likely to churn"
         return {"prediction": result}
     except Exception as e:
-        # Return error details for debugging
-        return {"error" : str(e)}
-    
-    
+        return {"error": str(e)}

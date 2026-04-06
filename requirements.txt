@@ -10,6 +10,7 @@ numpy
 lightgbm
 xgboost
 optuna
+mlflow
 
 # EDA (notebook)
 jupyter
