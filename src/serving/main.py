@@ -16,18 +16,15 @@ app = FastAPI(
     version="1.0"
 )
 
-# Load model at startup
-# model = mlflow.xgboost.load_model("models:/churn-model/latest")
-
 model_path = "/app/mlruns/0/models"
-versions = sorted(os.listdir(model_path))
-latest = os.path.join(model_path, versions[-1], "artifacts")
-model = mlflow.xgboost.load_model(latest)
 
-
-# mlflow.set_tracking_uri("sqlite:///mlflow.db")
-# Hvis du har registrert modellen i model registry:
-# model = mlflow.xgboost.load_model("models:/churn-model/latest")
+if os.path.exists(model_path):
+    versions = sorted(os.listdir(model_path))
+    latest = os.path.join(model_path, versions[-1], "artifacts")
+    model = mlflow.xgboost.load_model(latest)
+else:
+    print("WARNING: Modelfolder NOT FOUND")
+    model = None
 
 
 # CRITICAL: Required for AWS Application Load Balancer health checks
