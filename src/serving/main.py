@@ -35,13 +35,12 @@ if model is None:
     print("Model not found, creating dummy model!")
     class DummyModel:
         def __init__(self):
-            self.feature_names_in = [ "gender", "SeniorCitizen", "Partner", "Dependents", 
+            self.feature_names_in_ = [ "gender", "SeniorCitizen", "Partner", "Dependents", 
                 "tenure", "PhoneService", "MultipleLines", "InternetService", 
                 "OnlineSecurity", "OnlineBackup", "DeviceProtection", 
                 "TechSupport", "StreamingTV", "StreamingMovies", "Contract", 
                 "PaperlessBilling", "PaymentMethod", "MonthlyCharges", "TotalCharges"    
             ]
-            
         def predict(self, df):
             return np.zeros(len(df))
     @property
