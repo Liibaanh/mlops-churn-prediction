@@ -26,14 +26,15 @@ if os.path.exists(model_path) and os.listdir(model_path):
     latest = os.path.join(model_path, versions[-1], "artifacts")
     model = mlflow.xgboost.load_model(latest)
 else:
-    # Dette redder CI-pipelinen din!
-    print("Modell ikke funnet, lager en dummy-modell for testing.")
+    # CI-pipline, necessary!
+    # Creating dummy model
+    print("Model not found, creating dummy model!")
     class DummyModel:
         def predict(self, df):
-            return [0] * len(df) # Returnerer bare nuller
+            return [0] * len(df) # Returns zeros
         @property
         def feature_names_in_(self):
-            return [] # Legger til attributten som manglet
+            return [] 
             
     model = DummyModel()
 
