@@ -18,27 +18,30 @@ app = FastAPI(
 
 model_path = "/app/mlruns/0/models"
 
-# Finn modell-stien
-model_path = "/app/mlruns/0/models"
+def load_real_model():
+    if os.path.exists(model_path) and os.listdir(model_path):
+        # Find the lastest version
+        versions = sorted(os.listdir(model_path))
+        latest_version = versions[-1]
+        artifact_path = os.path.join(model_path, latest_version, "artifacts")
+        print(f"Downloading the REAL model! from {artifact_path}")
+        return mlflow.xgboost.load_model(artifact_path)
+    return None
+            
+model = load_real_model()
 
-if os.path.exists(model_path) and os.listdir(model_path):
-    versions = sorted(os.listdir(model_path))
-    latest = os.path.join(model_path, versions[-1], "artifacts")
-    model = mlflow.xgboost.load_model(latest)
-else:
-    # CI-pipline, necessary!
-    # Creating dummy model
+if model is None:
     print("Model not found, creating dummy model!")
     class DummyModel:
         def predict(self, df):
             return [0] * len(df) # Returns zeros
-        @property
-        def feature_names_in_(self):
-            return [] 
-            
+    @property
+    def feature_names_in_(self):
+        return [] 
+
     model = DummyModel()
-
-
+    
+    
 # CRITICAL: Required for AWS Application Load Balancer health checks
 @app.get("/")
 def root():
