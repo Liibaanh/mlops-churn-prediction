@@ -5,6 +5,7 @@ import mlflow.xgboost
 from fastapi import FastAPI
 from pydantic import BaseModel
 from dotenv import load_dotenv
+import numpy as np
 
 load_dotenv()
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db"))
@@ -33,8 +34,16 @@ model = load_real_model()
 if model is None:
     print("Model not found, creating dummy model!")
     class DummyModel:
+        def __init__(self):
+            self.feature_names_in = [ "gender", "SeniorCitizen", "Partner", "Dependents", 
+                "tenure", "PhoneService", "MultipleLines", "InternetService", 
+                "OnlineSecurity", "OnlineBackup", "DeviceProtection", 
+                "TechSupport", "StreamingTV", "StreamingMovies", "Contract", 
+                "PaperlessBilling", "PaymentMethod", "MonthlyCharges", "TotalCharges"    
+            ]
+            
         def predict(self, df):
-            return [0] * len(df) # Returns zeros
+            return np.zeros(len(df))
     @property
     def feature_names_in_(self):
         return [] 
