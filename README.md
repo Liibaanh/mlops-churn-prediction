@@ -15,7 +15,7 @@ The goal of this project is to predict customer churn using a machine learning m
 
 ## 📦 Containerization & Cloud
 The application is fully containerized. You can find the public Docker image on 
-[AWS ECR Public Gallery](https://gallery.ecr.aws/c1y4d5x4?page=1).
+[AWS ECR Public Gallery](https://gallery.ecr.aws/c1y4d5x4/churn-prediction-api).
 
 ### To run the project locally using Docker:
 1. Build the image:
