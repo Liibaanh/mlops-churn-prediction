@@ -1,0 +1,22 @@
+artifact_path: /Users/liibaanosman/Documents/MTTS/mlops-churn-prediction/mlruns/0/models/m-4038de10fde547ab9db667448e99a01e/artifacts
+flavors:
+  python_function:
+    data: model.ubj
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.xgboost
+    python_version: 3.12.6
+  xgboost:
+    code: null
+    data: model.ubj
+    model_class: xgboost.sklearn.XGBClassifier
+    model_format: ubj
+    xgb_version: 3.2.0
+mlflow_version: 3.10.1
+model_id: m-4038de10fde547ab9db667448e99a01e
+model_size_bytes: 520957
+model_uuid: m-4038de10fde547ab9db667448e99a01e
+prompts: null
+run_id: cf1db874ee64478c9fd10c3598c26899
+utc_time_created: '2026-04-01 18:50:04.921029'
