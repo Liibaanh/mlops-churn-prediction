@@ -143,7 +143,9 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-/data/ # check if this map is hidden.
+data/ # check if this map is hidden.
+mlflow.db
+mlruns/
 
 # Spyder project settings
 .spyderproject
